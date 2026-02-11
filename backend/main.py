@@ -81,15 +81,43 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest):
     if not GENAI_API_KEY:
-        raise HTTPException(status_code=500, detail="Gemini API Key not configured.")
-    
+        # MOCK MODE
+        import random
+        query = request.message.lower()
+        
+        # Simple RAG Simulation
+        matched_contacts = []
+        for contact in CONTACTS_DATA:
+            if (contact['role'] and contact['role'].lower() in query) or \
+               (contact['name'] and contact['name'].lower() in query) or \
+               (contact['category'] and contact['category'].lower() in query):
+                matched_contacts.append(f"{contact['name']} ({contact['role']}): {contact['phone'] or contact['email']}")
+        
+        if matched_contacts:
+            contact_info = "\n".join(matched_contacts[:3])
+            return {"response": f"[MOCK MODE] Here is the contact info you asked for:\n{contact_info}"}
+            
+        # Persona Simulation
+        if "course" in query or "study" in query:
+            return {"response": "[MOCK MODE] MUJ offers world-class engineering, management, and arts courses! Based on your interest, I can suggest the best path for you. What subjects do you enjoy?"}
+        elif "admission" in query:
+             return {"response": "[MOCK MODE] Admissions are open! You can apply online. Do you need the contact of an admission counselor?"}
+        else:
+            responses = [
+                "[MOCK MODE] Hello! I am MUJbot. How can I assist you with your university journey today?",
+                "[MOCK MODE] Manipal University Jaipur is a great place to be! Ask me anything about campus life.",
+                "[MOCK MODE] I can help you find faculty contacts or choose the right course."
+            ]
+            return {"response": random.choice(responses)}
+
     try:
         chat_session = model.start_chat(history=[])
         response = chat_session.send_message(request.message)
         return {"response": response.text}
     except Exception as e:
         print(f"Gemini Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Fallback to mock if API fails
+        return {"response": f"[MOCK ERROR] API Error: {str(e)}. (Running in fallback mode)"}
 
 @app.get("/health")
 async def health_check():
