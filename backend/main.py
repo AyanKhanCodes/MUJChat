@@ -6,8 +6,12 @@ from pydantic import BaseModel
 import google.generativeai as genai
 from dotenv import load_dotenv
 
+from pathlib import Path
+
 # Load environment variables
-load_dotenv()
+env_path = Path(__file__).parent / ".env"
+load_status = load_dotenv(dotenv_path=env_path)
+print(f"Loading .env from {env_path}: {load_status}")
 
 app = FastAPI()
 
@@ -70,7 +74,7 @@ generation_config = {
 }
 
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-2.0-flash",
     generation_config=generation_config,
     system_instruction=SYSTEM_PROMPT,
 )
